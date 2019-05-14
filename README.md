@@ -9,23 +9,26 @@ I have the following network setup at my home:
 https://www.diyhobi.com/share-iphones-internet-home-network-lan-using-raspberry-pi/
 https://web.archive.org/web/20171129092824/http://www.daveconroy.com:80/how-to-tether-your-raspberry-pi-with-your-iphone-5/
 
-
+```
 sudo apt-get install usbmuxd
 sudo apt-get install gvfs ipheth-utils
 sudo apt-get install libimobiledevice-utils gvfs-backends gvfs-bin gvfs-fuse 
 sudo apt-get install openssh-server dnsmasq
-
+```
 
 /etc/network/interfaces
 
+```
 auto eth1
 allow-hotplug eth1
 iface eth1 inet dhcp
+```
 
-
+```
 sudo systemctl enable ssh
+```
 
-
+```
 # Reset IP tables
 sudo iptables -F FORWARD
 sudo iptables -F POSTROUTING -t nat
@@ -36,9 +39,9 @@ sudo iptables -A FORWARD -i eth1 -o eth0 -m state --state RELATED,ESTABLISHED -j
 sudo iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT
 sudo iptables -L -n -v
 sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
-
+```
  
-Links
+### Links
 https://ubuntuforums.org/showthread.php?t=2228772
 https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md
 https://www.raspberrypi.org/forums/viewtopic.php?t=18356
@@ -58,19 +61,28 @@ https://www.digitalocean.com/community/tutorials/a-deep-dive-into-iptables-and-n
 
 Install OpenVPN
 
+```
 sudo apt-get update
 sudo apt-get install openvpn
+```
 
 Enable OpenVPN
 
+```
 sudo systemctl enable openvpn
+```
 
 Move *.ovpn files into /etc/openvpn
 
 Backup IP tables
 
+```
 sudo iptables-save > iptables-before-vpn
+```
 
+Setup IP tables
+
+```
 # Allow traffic initiated from internal network
 sudo iptables -A FORWARD -i eth0 -o tap0 -j ACCEPT
 
@@ -92,8 +104,10 @@ sudo iptables -t nat -F POSTROUTING
 sudo iptables -t nat -A POSTROUTING -o tap0 -j MASQUERADE
 
 sudo iptables -t nat -R POSTROUTING 1 -o eth1 -j MASQUERADE
+```
 
-Run as daemon
+Run OpenVPN as daemon
 
+```
 sudo openvpn --config "openvpn-config.ovpn" --daemon
-
+```
