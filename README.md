@@ -16,7 +16,7 @@ sudo apt-get install libimobiledevice-utils gvfs-backends gvfs-bin gvfs-fuse
 sudo apt-get install openssh-server dnsmasq
 ```
 
-/etc/network/interfaces
+Edit `/etc/network/interfaces`:
 
 ```
 auto eth1
@@ -24,9 +24,13 @@ allow-hotplug eth1
 iface eth1 inet dhcp
 ```
 
+Enable SSH:
+
 ```
 sudo systemctl enable ssh
 ```
+
+Reset IP tables and set new ones:
 
 ```
 # Reset IP tables
@@ -42,6 +46,9 @@ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 ```
  
 ### Links
+
+Some useful links which I used to figure out how to set it up properly:
+
 https://ubuntuforums.org/showthread.php?t=2228772
 https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md
 https://www.raspberrypi.org/forums/viewtopic.php?t=18356
@@ -51,13 +58,6 @@ https://www.howtogeek.com/68999/how-to-tether-your-iphone-to-your-linux-pc/
 
 
 ## OpenVPN
-
-https://www.instructables.com/id/Raspberry-Pi-VPN-Gateway/
-https://www.booleanworld.com/depth-guide-iptables-linux-firewall/
-https://danielmiessler.com/study/iptables/
-https://www.pinoylinux.org/tutorial/the-beginners-guide-to-iptables-the-linux-firewall/
-https://stuffphilwrites.com/2014/09/iptables-processing-flowchart/
-https://www.digitalocean.com/community/tutorials/a-deep-dive-into-iptables-and-netfilter-architecture
 
 Install OpenVPN
 
@@ -72,15 +72,15 @@ Enable OpenVPN
 sudo systemctl enable openvpn
 ```
 
-Move *.ovpn files into /etc/openvpn
+Move *.ovpn files into `/etc/openvpn` (not really necessary)
 
-Backup IP tables
+Backup IP tables:
 
 ```
 sudo iptables-save > iptables-before-vpn
 ```
 
-Setup IP tables
+Setup IP tables:
 
 ```
 # Allow traffic initiated from internal network
@@ -91,23 +91,37 @@ sudo iptables -A FORWARD -i tap0 -o eth0 -m state --state RELATED,ESTABLISHED -j
 
 # Drop existing connections
 
+# When enabling VPN
 sudo iptables -A FORWARD -i eth0 -o eth1 -j DROP
 sudo iptables -A FORWARD -i eth1 -o eth0 -j DROP
 
+# When disabling VPN
 sudo iptables -A FORWARD -i eth0 -o tap0 -j DROP
 sudo iptables -A FORWARD -i tap0 -o eth0 -j DROP
 
 # This basically routes traffic via VPN
-sudo iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o tap0 -j MASQUERADE
-
 sudo iptables -t nat -F POSTROUTING
 sudo iptables -t nat -A POSTROUTING -o tap0 -j MASQUERADE
 
-sudo iptables -t nat -R POSTROUTING 1 -o eth1 -j MASQUERADE
+# When disabling VPN
+sudo iptables -t nat -F POSTROUTING
+sudo iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
 ```
 
-Run OpenVPN as daemon
+Run OpenVPN as daemon:
 
 ```
 sudo openvpn --config "openvpn-config.ovpn" --daemon
 ```
+
+### Links
+
+Some useful links which I used to figure out how to set it up properly:
+
+https://www.instructables.com/id/Raspberry-Pi-VPN-Gateway/
+https://www.booleanworld.com/depth-guide-iptables-linux-firewall/
+https://danielmiessler.com/study/iptables/
+https://www.pinoylinux.org/tutorial/the-beginners-guide-to-iptables-the-linux-firewall/
+https://stuffphilwrites.com/2014/09/iptables-processing-flowchart/
+https://www.digitalocean.com/community/tutorials/a-deep-dive-into-iptables-and-netfilter-architecture
+
